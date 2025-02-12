@@ -1,0 +1,109 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: white;
+    color: black;
+}
+
+nav {
+    background-color: #002855;
+    padding: 15px 0;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 0;
+    margin: 0;
+}
+
+nav ul li {
+    display: inline;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    padding: 10px;
+    transition: color 0.3s;
+}
+
+nav ul li a:hover {
+    color: #87CEFA;
+}
+
+main {
+    text-align: center;
+    padding: 20px;
+}
+
+.nombre {
+    font-size: 36px;
+    color: #87CEFA;
+}
+
+.especialidad {
+    font-size: 24px;
+    color: #002855;
+}
+
+#descripcion {
+    font-size: 18px;
+    max-width: 600px;
+    margin: 10px auto;
+}
+
+.btn-cita {
+    background-color: #87CEFA;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-cita:hover {
+    background-color: #5aaedf;
+}
+
+.comentarios {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.tarjeta {
+    background-color: #002855;
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    width: 250px;
+    text-align: center;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s;
+}
+
+.tarjeta:hover {
+    transform: scale(1.05);
+}
+
+.tarjeta h3 {
+    margin: 10px 0;
+}
+
+.tarjeta p {
+    font-size: 16px;
+}
+
+.tarjeta span {
+    font-size: 14px;
+    font-weight: bold;
+}
