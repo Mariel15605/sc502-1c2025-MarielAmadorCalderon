@@ -1,13 +1,15 @@
 <?php
 header('Content-Type: application/json');
 require 'conexion.php';
+require 'sesiones.php';
+
+verificarSesionActiva();
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        // Obtener todos los comentarios
-        $query = "SELECT * FROM tareas_comentarios ORDER BY id DESC";
+        $query = "SELECT * FROM comentarios ORDER BY id DESC";
         $result = $conexion->query($query);
         $comentarios = [];
 
@@ -19,24 +21,28 @@ switch ($method) {
         break;
 
     case 'POST':
-        // Agregar comentario
         $data = json_decode(file_get_contents("php://input"), true);
-        if (!isset($data['tarea_id'], $data['comentario'])) {
+        if (!isset($data['tareas_id'], $data['contenido'])) {
             http_response_code(400);
             echo json_encode(["error" => "Faltan datos requeridos"]);
             exit;
         }
 
-        $tarea_id = intval($data['tarea_id']);
-        $comentario = $conexion->real_escape_string($data['comentario']);
+        $tarea_id = intval($data['tareas_id']);
+        $contenido = $conexion->real_escape_string($data['contenido']);
+        $usuario = $conexion->real_escape_string($_SESSION['usuario']);
 
-        $query = "INSERT INTO tareas_comentarios (tarea_id, comentario) VALUES ($tarea_id, '$comentario')";
-        $conexion->query($query);
-        echo json_encode(["success" => true]);
+        $query = "INSERT INTO comentarios (tareas_id, usuario, contenido, fecha) 
+                  VALUES ($tarea_id, '$usuario', '$contenido', NOW())";
+
+        if ($conexion->query($query)) {
+            echo json_encode(["success" => true]);
+        } else {
+            echo json_encode(["error" => "Error al insertar comentario"]);
+        }
         break;
 
     case 'DELETE':
-        // Eliminar comentario
         parse_str(file_get_contents("php://input"), $data);
         if (!isset($data['id'])) {
             http_response_code(400);
@@ -45,14 +51,14 @@ switch ($method) {
         }
 
         $id = intval($data['id']);
-        $conexion->query("DELETE FROM tareas_comentarios WHERE id = $id");
+        $conexion->query("DELETE FROM comentarios WHERE id = $id");
         echo json_encode(["success" => true]);
         break;
 
     default:
-        http_response_code(405);
         echo json_encode(["error" => "Método no permitido"]);
         break;
 }
 ?>
+
 
