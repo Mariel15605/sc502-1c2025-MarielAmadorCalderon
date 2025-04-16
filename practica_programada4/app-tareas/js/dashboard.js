@@ -1,125 +1,97 @@
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function () {
+    let currentTaskId = null;
 
-    const tasks = [{
-        id: 1,
-        title: "Complete project report",
-        description: "Prepare and submit the project report",
-        dueDate: "2024-12-01"
-    },
-    {
-        id:2,
-        title: "Team Meeting",
-        description: "Get ready for the season",
-        dueDate: "2024-12-01"
-    },
-    {
-        id: 3,
-        title: "Code Review",
-        description: "Check partners code",
-        dueDate: "2024-12-01"
-    }];
-    
-    function loadTasks(){
-        const taskList = document.getElementById('task-list');
-        taskList.innerHTML = '';
-        tasks.forEach(function(task){
-            const taskCard = document.createElement('div');
-            taskCard.className = 'col-md-4 mb-3';
-            taskCard.innerHTML = `
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">${task.title}</h5>
-                    <p class="card-text">${task.description}</p>
-                    <p class="card-text"><small class="text-muted">Due: ${task.dueDate}</small> </p>
-                </div>
-                <div class="card-footer d-flex justify-content-between">
-                    <button class="btn btn-secondary btn-sm edit-task" data-id="${task.id}">Edit</button>
-                    <button class="btn btn-danger btn-sm delete-task" data-id="${task.id}">Delete</button>
-                </div>
-            </div>
-            `;
-            taskList.appendChild(taskCard);
-        });
+    function loadTasks() {
+        fetch('../backend/listar_tareas.php')
+            .then(res => res.json())
+            .then(tasks => {
+                const taskList = document.getElementById('task-list');
+                taskList.innerHTML = '';
 
-        document.querySelectorAll('.edit-task').forEach(function(button){
-            button.addEventListener('click', handleEditTask);
-        });
+                tasks.forEach(function (task) {
+                    const taskCard = document.createElement('div');
+                    taskCard.className = 'col-md-4 mb-3';
+                    taskCard.innerHTML = `
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">${task.titulo}</h5>
+                                <p class="card-text">${task.descripcion}</p>
+                                <p class="card-text"><small class="text-muted">Estado: ${task.estado || 'pendiente'}</small></p>
+                            </div>
+                            <div class="card-footer d-flex justify-content-between">
+                                <button class="btn btn-secondary btn-sm edit-task" data-id="${task.id}" data-titulo="${task.titulo}" data-desc="${task.descripcion}" data-estado="${task.estado}">Editar</button>
+                                <button class="btn btn-danger btn-sm delete-task" data-id="${task.id}">Eliminar</button>
+                            </div>
+                        </div>
+                    `;
+                    taskList.appendChild(taskCard);
+                });
 
-        document.querySelectorAll('.delete-task').forEach(function(button){
-            button.addEventListener('click', handleDeleteTask);
-        });
+                document.querySelectorAll('.edit-task').forEach(function (button) {
+                    button.addEventListener('click', handleEditTask);
+                });
+
+                document.querySelectorAll('.delete-task').forEach(function (button) {
+                    button.addEventListener('click', handleDeleteTask);
+                });
+            });
     }
 
-    function handleEditTask(event){
-        const taskId = parseInt(event.target.dataset.id);
-        const task = tasks.find(t => t.id === taskId);
+    function handleEditTask(event) {
+        const button = event.target;
+        currentTaskId = button.dataset.id;
+        document.getElementById('task-title').value = button.dataset.titulo;
+        document.getElementById('task-desc').value = button.dataset.desc;
+        document.getElementById('task-estado').value = button.dataset.estado || 'pendiente';
 
-        if (task) {
-            // Cargar datos en cada campo del formulario
-            document.getElementById('task-id').value = task.id;
-            document.getElementById('task-title').value = task.title;
-            document.getElementById('task-desc').value = task.description;
-            document.getElementById('due-date').value = task.dueDate;
+        const modal = new bootstrap.Modal(document.getElementById('taskModal'));
+        modal.show();
+    }
 
-            // Mostrar el modal
-            currentTaskId = taskId;
-            const modal = new bootstrap.Modal(document.getElementById('taskModal'));
-            modal.show();
+    function handleDeleteTask(event) {
+        const taskId = event.target.dataset.id;
+
+        if (confirm("¿Estás seguro de eliminar esta tarea?")) {
+            fetch('../backend/eliminar_tarea.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${taskId}`
+            })
+                .then(res => res.text())
+                .then(data => {
+                    alert(data);
+                    loadTasks();
+                });
         }
     }
 
-    function handleDeleteTask(event){
-        const taskId = parseInt(event.target.dataset.id);
-        const taskIndex = tasks.findIndex(t => t.id === taskId);
-
-        // Eliminar la tarea del array y recargarlas
-        if (taskIndex !== -1) {
-            tasks.splice(taskIndex, 1);
-            loadTasks(); 
-        }
-    }
-
-    document.getElementById('task-form').addEventListener('submit', function(e){
+    document.getElementById('task-form').addEventListener('submit', function (e) {
         e.preventDefault();
 
-        let currentTaskId = document.getElementById('task-id').value;
-        const taskTitle = document.getElementById('task-title').value;
-        const taskDesc = document.getElementById('task-desc').value;
-        const dueDate = document.getElementById('due-date').value;
+        const titulo = document.getElementById('task-title').value;
+        const descripcion = document.getElementById('task-desc').value;
+        const estado = document.getElementById('task-estado').value;
 
-        if (currentTaskId) {
-            // Editar tarea existente
-            const taskIndex = tasks.findIndex(t => t.id === parseInt(currentTaskId));
-            tasks[taskIndex] = {
-                id: parseInt(currentTaskId),
-                title: taskTitle,
-                description: taskDesc,
-                dueDate: dueDate
-            };
-        } else {
-            // Agregar la tarea al array
-            const newTask = {
-                id: tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1,
-                title: taskTitle,
-                description: taskDesc,
-                dueDate: dueDate
-            };
-            tasks.push(newTask);
-        }
+        const url = currentTaskId ? '../backend/actualizar_tarea.php' : '../backend/crear_tarea.php';
+        const bodyData = currentTaskId
+            ? `id=${currentTaskId}&titulo=${encodeURIComponent(titulo)}&descripcion=${encodeURIComponent(descripcion)}&estado=${estado}`
+            : `titulo=${encodeURIComponent(titulo)}&descripcion=${encodeURIComponent(descripcion)}`;
 
-        document.getElementById('task-id').value = '';
-        currentTaskId = null;
-        e.target.reset();
-
-        // Recargar las tareas
-        loadTasks();
-
-        const modal = bootstrap.Modal.getInstance(document.getElementById('taskModal'));
-        modal.hide();
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: bodyData
+        })
+            .then(res => res.text())
+            .then(data => {
+                alert(data);
+                loadTasks();
+                document.getElementById('task-form').reset();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('taskModal'));
+                modal.hide();
+                currentTaskId = null;
+            });
     });
 
-
-
     loadTasks();
-
 });

@@ -1,85 +1,52 @@
 <?php
-header("Content-Type: application/json");
-require_once "conexion.php";
-require_once "sesiones.php";
-
-verificarSesionActiva();
+header('Content-Type: application/json');
+require 'conexion.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        if (isset($_GET['tarea_id'])) {
-            $tarea_id = intval($_GET['tarea_id']);
-            $sql = "SELECT * FROM comentarios WHERE tarea_id = $tarea_id ORDER BY fecha DESC";
-            $result = $conn->query($sql);
-            $comentarios = [];
+        // Obtener todos los comentarios
+        $query = "SELECT * FROM tareas_comentarios ORDER BY id DESC";
+        $result = $conexion->query($query);
+        $comentarios = [];
 
-            while ($row = $result->fetch_assoc()) {
-                $comentarios[] = $row;
-            }
-
-            echo json_encode($comentarios);
-        } else {
-            echo json_encode(["error" => "Falta tarea_id"]);
+        while ($row = $result->fetch_assoc()) {
+            $comentarios[] = $row;
         }
+
+        echo json_encode($comentarios);
         break;
 
     case 'POST':
+        // Agregar comentario
         $data = json_decode(file_get_contents("php://input"), true);
-
-        if (isset($data['tarea_id'], $data['contenido'])) {
-            $tarea_id = intval($data['tarea_id']);
-            $contenido = $conn->real_escape_string($data['contenido']);
-            $usuario = $conn->real_escape_string($_SESSION['usuario']);
-
-            $sql = "INSERT INTO comentarios (tarea_id, contenido, usuario) 
-                    VALUES ($tarea_id, '$contenido', '$usuario')";
-
-            if ($conn->query($sql)) {
-                echo json_encode(["mensaje" => "Comentario agregado"]);
-            } else {
-                echo json_encode(["error" => $conn->error]);
-            }
-        } else {
-            echo json_encode(["error" => "Datos incompletos"]);
+        if (!isset($data['tarea_id'], $data['comentario'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Faltan datos requeridos"]);
+            exit;
         }
-        break;
 
-    case 'PUT':
-        $data = json_decode(file_get_contents("php://input"), true);
+        $tarea_id = intval($data['tarea_id']);
+        $comentario = $conexion->real_escape_string($data['comentario']);
 
-        if (isset($data['id'], $data['contenido'])) {
-            $id = intval($data['id']);
-            $contenido = $conn->real_escape_string($data['contenido']);
-
-            $sql = "UPDATE comentarios SET contenido = '$contenido' WHERE id = $id";
-
-            if ($conn->query($sql)) {
-                echo json_encode(["mensaje" => "Comentario actualizado"]);
-            } else {
-                echo json_encode(["error" => $conn->error]);
-            }
-        } else {
-            echo json_encode(["error" => "Datos incompletos"]);
-        }
+        $query = "INSERT INTO tareas_comentarios (tarea_id, comentario) VALUES ($tarea_id, '$comentario')";
+        $conexion->query($query);
+        echo json_encode(["success" => true]);
         break;
 
     case 'DELETE':
+        // Eliminar comentario
         parse_str(file_get_contents("php://input"), $data);
-
-        if (isset($data['id'])) {
-            $id = intval($data['id']);
-            $sql = "DELETE FROM comentarios WHERE id = $id";
-
-            if ($conn->query($sql)) {
-                echo json_encode(["mensaje" => "Comentario eliminado"]);
-            } else {
-                echo json_encode(["error" => $conn->error]);
-            }
-        } else {
-            echo json_encode(["error" => "Falta el id"]);
+        if (!isset($data['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "ID no especificado"]);
+            exit;
         }
+
+        $id = intval($data['id']);
+        $conexion->query("DELETE FROM tareas_comentarios WHERE id = $id");
+        echo json_encode(["success" => true]);
         break;
 
     default:
@@ -87,6 +54,5 @@ switch ($method) {
         echo json_encode(["error" => "Método no permitido"]);
         break;
 }
-
-$conn->close();
 ?>
+

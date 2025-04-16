@@ -1,148 +1,185 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand" href="#">Task Manager</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="index.html">Logout</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    <div class="container my-4">
-        <h1 class="text-center mb-4">Your tasks</h1>
-        <div class="d-flex justify-content-center mb-4">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#taskModal">Add New Task</button>
-        </div>
-        <div class="row" id="task-list">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="#">Task Manager</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Cerrar sesión</a>
+                </li>
+            </ul>
         </div>
     </div>
+</nav>
 
-    <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="taskModalLabel">Add Task</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">x</button>
+<div class="container my-4">
+    <h1 class="text-center mb-4">Tus Tareas</h1>
+    <div class="d-flex justify-content-center mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#taskModal">Agregar Nueva Tarea</button>
+    </div>
+    <div class="row" id="task-list"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="task-form" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="taskModalLabel">Agregar Tarea</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar">x</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="task-id">
+                <div class="mb-3">
+                    <label for="task-title" class="form-label">Título</label>
+                    <input type="text" class="form-control" id="task-title" required>
                 </div>
-                <div class="modal-body">
-                    <form id="task-form">
-                        <input type="hidden" id="task-id">
-                        <div class="mb-3">
-                            <label for="task-title" class="form-label">Task Title</label>
-                            <input type="text" class="form-control" id="task-title" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="task-desc" class="form-label">Task Description</label>
-                            <textarea class="form-control" id="task-desc" rows="3" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="due-date" class="form-label">Due Date</label>
-                            <input type="date" class="form-control" id="due-date" required>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <button type="submit" class="btn btn-primary">Save Task</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        </div>
-                    </form>
+                <div class="mb-3">
+                    <label for="task-desc" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="task-desc" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="due-date" class="form-label">Fecha límite</label>
+                    <input type="date" class="form-control" id="due-date" required>
                 </div>
             </div>
-        </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    
-    let comments = [];
+let tareas = [];
+let comentarios = [];
 
-    document.addEventListener("DOMContentLoaded", function() {
-        loadTasks();
-    });
+// Cargar tareas desde backend
+async function loadTasks() {
+    const res = await fetch('backend/tareas.php');
+    tareas = await res.json();
 
-    function loadTasks() {
-        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        const taskList = document.getElementById("task-list");
-        taskList.innerHTML = "";
-        
-        tasks.forEach((task, index) => {            
-            const taskComments = comments.filter(c => c.taskIndex === index);
-            
-            const taskCard = `
-                <div class="col-md-4">
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">${task.title}</h5>
-                            <p class="card-text">${task.description}</p>
-                            <h6>Comments:</h6>
-                            <ul class="list-group mb-2" id="comments-list-${index}">
-                                ${taskComments.map(comment => `
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        ${comment.text}
-                                        <button class="btn btn-danger btn-sm" onclick="deleteComment(${comment.id})">&times;</button>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="comment-input-${index}" placeholder="Añadir un comentario...">
-                                <button class="btn btn-primary" onclick="addComment(${index})">Añadir</button>
-                            </div>
-                        </div>
+    const comRes = await fetch('backend/comentarios.php');
+    comentarios = await comRes.json();
+
+    const taskList = document.getElementById("task-list");
+    taskList.innerHTML = '';
+
+    tareas.forEach(task => {
+        const taskComments = comentarios.filter(c => c.tarea_id == task.id);
+        const commentList = taskComments.map(c => `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${c.comentario}
+                <button class="btn btn-danger btn-sm" onclick="deleteComment(${c.id})">&times;</button>
+            </li>
+        `).join('');
+
+        taskList.innerHTML += `
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">${task.titulo}</h5>
+                    <p class="card-text">${task.descripcion}</p>
+                    <p><small class="text-muted">Fecha límite: ${task.fecha_limite}</small></p>
+                    <h6>Comentarios</h6>
+                    <ul class="list-group mb-2" id="comments-list-${task.id}">${commentList}</ul>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="comment-input-${task.id}" placeholder="Añadir comentario...">
+                        <button class="btn btn-primary" onclick="addComment(${task.id})">Añadir</button>
                     </div>
-                </div>`;
-            taskList.innerHTML += taskCard;
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <button class="btn btn-secondary btn-sm" onclick="editTask(${task.id})">Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Eliminar</button>
+                </div>
+            </div>
+        </div>`;
+    });
+}
+
+// Crear o editar tarea
+document.getElementById("task-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const id = document.getElementById("task-id").value;
+    const data = {
+        titulo: document.getElementById("task-title").value,
+        descripcion: document.getElementById("task-desc").value,
+        fecha_limite: document.getElementById("due-date").value
+    };
+
+    const options = {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(id ? { ...data, id } : data)
+    };
+
+    await fetch('backend/tareas.php', options);
+    document.getElementById("task-form").reset();
+    bootstrap.Modal.getInstance(document.getElementById('taskModal')).hide();
+    loadTasks();
+});
+
+// Editar tarea
+function editTask(id) {
+    const task = tareas.find(t => t.id == id);
+    document.getElementById("task-id").value = task.id;
+    document.getElementById("task-title").value = task.titulo;
+    document.getElementById("task-desc").value = task.descripcion;
+    document.getElementById("due-date").value = task.fecha_limite;
+
+    const modal = new bootstrap.Modal(document.getElementById("taskModal"));
+    modal.show();
+}
+
+// Eliminar tarea
+async function deleteTask(id) {
+    if (confirm("¿Seguro que deseas eliminar esta tarea?")) {
+        await fetch('backend/tareas.php', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${id}`
         });
-    }
-
-    // Función para eliminar comentarios
-    function deleteComment(commentId) {
-        comments = comments.filter(c => c.id !== commentId);
         loadTasks();
     }
+}
 
-    document.getElementById("task-form").addEventListener("submit", function(event) {
-        event.preventDefault();
-        const title = document.getElementById("task-title").value;
-        const description = document.getElementById("task-desc").value;
-        const dueDate = document.getElementById("due-date").value;
-        
-        const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-        tasks.push({ title, description, dueDate });
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        
-        loadTasks();
-        document.getElementById("task-form").reset();
-        const modal = bootstrap.Modal.getInstance(document.getElementById("taskModal"));
-        modal.hide();
+// Agregar comentario
+async function addComment(tareaId) {
+    const input = document.getElementById(`comment-input-${tareaId}`);
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    await fetch('backend/comentarios.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tarea_id: tareaId, comentario: texto })
     });
 
-    function addComment(taskIndex) {
-        const input = document.getElementById(`comment-input-${taskIndex}`);
-        const commentText = input.value.trim();
-        if (commentText === "") return;       
-        
-        comments.push({
-            taskIndex,
-            text: commentText,
-            id: Date.now()
-        });
-        
-        input.value = '';
-        loadTasks();
-    }
+    input.value = '';
+    loadTasks();
+}
+
+// Eliminar comentario
+async function deleteComment(id) {
+    await fetch('backend/comentarios.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `id=${id}`
+    });
+    loadTasks();
+}
+
+document.addEventListener("DOMContentLoaded", loadTasks);
 </script>
 </body>
 </html>
